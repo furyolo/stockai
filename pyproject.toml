@@ -1,0 +1,22 @@
+[project]
+name = "stockai"
+version = "0.1.0"
+description = "Stock AI"
+authors = [
+    { name = "Andy", email = "" }
+]
+dependencies = [
+    "akshare>=1.16.83",
+    "pandas>=2.2.3",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+# Added UV configuration
+[[tool.uv.index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+default = true
