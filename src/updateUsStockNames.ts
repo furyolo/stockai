@@ -12,7 +12,7 @@ interface StockNameFromPython {
 }
 
 async function getStockNameFromPython(): Promise<StockNameFromPython[]> {
-    const pythonScriptPath = path.join(__dirname, '..', 'scripts', 'get_us_stocks.py');
+    const pythonScriptPath = path.join(__dirname, '..', 'scripts', 'get_us_stock_name.py');
     // 确保使用正确的 Python 解释器路径，或者假设 'python' 在 PATH 中
     // 激活 uv 虚拟环境并运行 Python
     const command = 'uv';

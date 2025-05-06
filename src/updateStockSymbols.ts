@@ -6,14 +6,23 @@ const prisma = new PrismaClient();
 
 // 定义从 Python 脚本接收的数据结构类型
 interface StockSymbolFromPython {
-    currency: string | null;
-    description: string | null;
-    displaySymbol: string;
-    figi: string | null;
-    mic: string | null;
-    shareClassFIGI: string | null;
+    index: number | null;
+    name: string;
+    price: number | null;
+    price_change: number | null;
+    price_change_percent: number | null;
+    open: number | null;
+    high: number | null;
+    low: number | null;
+    pre_close: number | null;
+    market_value: number | string | null; // Python可能输出为数字或大数科学计数法字符串
+    pe_ratio: number | null;
+    volume: number | string | null;
+    turnover: number | string | null;
+    amplitude: number | null;
+    turnover_rate: number | null;
+    fullsymbol: string;
     symbol: string;
-    type: string | null;
 }
 
 async function getStockSymbolsFromPython(): Promise<StockSymbolFromPython[]> {
@@ -62,71 +71,123 @@ async function getStockSymbolsFromPython(): Promise<StockSymbolFromPython[]> {
 }
 
 // 将接收到的数据转换为 Prisma StockSymbolUpdateInput 类型
-function transformSymbolForUpdate(data: StockSymbolFromPython): Omit<Prisma.StockSymbolUpdateInput, 'symbol'> {
+function transformSymbolForUpdate(data: StockSymbolFromPython): Omit<Prisma.StockSymbolUpdateInput, 'fullsymbol'> {
+    // Helper to convert number/string to BigInt or null
+    const toBigIntOrNull = (value: number | string | null): bigint | null => {
+        if (value === null || value === undefined) return null;
+        try {
+            // 尝试直接转换，处理数字和看起来像数字的字符串
+            return BigInt(value);
+        } catch (e) {
+            console.warn(`[Node.js] Could not convert value "${value}" to BigInt for symbol ${data.fullsymbol}. Setting to null.`);
+            return null; // 如果转换失败，返回 null
+        }
+    };
+
+        // Helper to convert number/string to Decimal or null
+        const toDecimalOrNull = (value: number | null): Prisma.Decimal | null => {
+        if (value === null || value === undefined || !isFinite(value)) return null; // 检查 null, undefined, NaN, Infinity
+        try {
+            return new Prisma.Decimal(value.toFixed(4)); // 保留4位小数创建Decimal
+        } catch (e) {
+            console.warn(`[Node.js] Could not convert value "${value}" to Decimal for symbol ${data.fullsymbol}. Setting to null.`);
+            return null;
+        }
+    };
+
+
     return {
-        currency: data.currency,
-        description: data.description,
-        displaySymbol: data.displaySymbol,
-        figi: data.figi,
-        mic: data.mic,
-        shareClassFIGI: data.shareClassFIGI,
-        type: data.type,
+        index: data.index,
+        name: data.name,
+        price: toDecimalOrNull(data.price),
+        price_change: toDecimalOrNull(data.price_change),
+        price_change_percent: toDecimalOrNull(data.price_change_percent),
+        open: toDecimalOrNull(data.open),
+        high: toDecimalOrNull(data.high),
+        low: toDecimalOrNull(data.low),
+        pre_close: toDecimalOrNull(data.pre_close),
+        market_value: toBigIntOrNull(data.market_value),
+        pe_ratio: toDecimalOrNull(data.pe_ratio),
+        volume: toBigIntOrNull(data.volume),
+        turnover: toBigIntOrNull(data.turnover),
+        amplitude: toDecimalOrNull(data.amplitude),
+        turnover_rate: toDecimalOrNull(data.turnover_rate),
+        symbol: data.symbol,
     };
 }
 
 async function updateStockSymbols() {
     console.log("[Node.js] Starting stock symbols update process...");
     try {
-        const symbols = await getStockSymbolsFromPython();
+        const stocks = await getStockSymbolsFromPython();
 
-        if (!symbols || symbols.length === 0) {
+        if (!stocks || stocks.length === 0) {
             console.log("[Node.js] No stock symbols received from Python script. Exiting.");
             return;
         }
 
-        console.log(`[Node.js] Preparing to upsert ${symbols.length} stock symbol records...`);
+        console.log(`[Node.js] Preparing to upsert ${stocks.length} stock symbol records...`);
         let successCount = 0;
         let errorCount = 0;
         const batchSize = 500; // 批量处理大小
         let promises: Promise<any>[] = [];
 
-        for (let i = 0; i < symbols.length; i++) {
-            const symbol = symbols[i];
-            if (!symbol.symbol) {
-                console.warn("[Node.js] Skipping record due to missing symbol (primary key):", symbol);
+        for (let i = 0; i < stocks.length; i++) {
+            const stock = stocks[i];
+            if (!stock.fullsymbol) {
+                console.warn("[Node.js] Skipping record due to missing symbol (primary key):", stock);
                 errorCount++;
                 continue;
             }
 
             try {
-                const updateData = transformSymbolForUpdate(symbol);
+                const updateData = transformSymbolForUpdate(stock);
+                // BigInt字段转换函数，复用transformSymbolForUpdate中的实现
+                const toBigIntOrNull = (value: number | string | null): bigint | null => {
+                    if (value === null || value === undefined) return null;
+                    try {
+                        return BigInt(value);
+                    } catch (e) {
+                        console.warn(`[Node.js] Could not convert value "${value}" to BigInt for symbol ${stock.fullsymbol}. Setting to null.`);
+                        return null;
+                    }
+                };
                 const createData = {
-                    symbol: symbol.symbol,
-                    currency: symbol.currency,
-                    description: symbol.description,
-                    displaySymbol: symbol.displaySymbol,
-                    figi: symbol.figi,
-                    mic: symbol.mic,
-                    shareClassFIGI: symbol.shareClassFIGI,
-                    type: symbol.type,
+                    index: stock.index,
+                    name: stock.name,
+                    price: stock.price,
+                    price_change: stock.price_change,
+                    price_change_percent: stock.price_change_percent,
+                    open: stock.open,
+                    high: stock.high,
+                    low: stock.low,
+                    pre_close: stock.pre_close,
+                    market_value: toBigIntOrNull(stock.market_value),
+                    pe_ratio: stock.pe_ratio,
+                    volume: toBigIntOrNull(stock.volume),
+                    turnover: toBigIntOrNull(stock.turnover),
+                    amplitude: stock.amplitude,
+                    turnover_rate: stock.turnover_rate,
+                    fullsymbol: stock.fullsymbol,
+                    symbol: stock.symbol,
                 };
 
                 promises.push(
                     prisma.stockSymbol.upsert({
-                        where: { symbol: symbol.symbol },
+                        where: { fullsymbol: stock.fullsymbol },
                         update: updateData,
                         create: createData,
                     })
                 );
 
-                if (promises.length === batchSize || i === symbols.length - 1) {
+                if (promises.length === batchSize || i === stocks.length - 1) {
                     const results = await Promise.allSettled(promises);
                     results.forEach((result, index) => {
                         if (result.status === 'fulfilled') {
                             successCount++;
                         } else {
                             const errorIndex = i - (promises.length - 1) + index;
-                            const failedSymbol = symbols[errorIndex]?.symbol || 'unknown';
+                            const failedSymbol = stocks[errorIndex]?.fullsymbol || 'unknown';
                             console.error(`[Node.js] Error upserting stock symbol ${failedSymbol}: ${result.reason?.message || result.reason}`);
                             errorCount++;
                         }
@@ -135,15 +196,15 @@ async function updateStockSymbols() {
                     promises = [];
                 }
             } catch (transformError: any) {
-                console.error(`[Node.js] Error transforming data for stock symbol ${symbol.symbol}: ${transformError.message}`);
+                console.error(`[Node.js] Error transforming data for stock symbol ${stock.fullsymbol}: ${transformError.message}`);
                 errorCount++;
-                if (promises.length === batchSize || i === symbols.length - 1) {
+                if (promises.length === batchSize || i === stocks.length - 1) {
                     promises = [];
                 }
             }
         }
 
-        console.log(`[Node.js] Stock symbols update finished. Total records processed: ${symbols.length}. Success: ${successCount}, Errors: ${errorCount}`);
+        console.log(`[Node.js] Stock symbols update finished. Total records processed: ${stocks.length}. Success: ${successCount}, Errors: ${errorCount}`);
 
     } catch (error) {
         console.error("[Node.js] An error occurred during the update process:", error);

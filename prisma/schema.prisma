@@ -17,23 +17,32 @@ model UsStocksName {
   name                 String    // 英文名称
   cname                String?   // 中文名称 (可能为空)
   symbol               String    @id // 股票代码 (主键)
-  fetchedAt            DateTime  @default(now()) // 数据获取时间
-  updatedAt            DateTime  @updatedAt // Prisma自动管理的更新时间
+  fetched_at           DateTime  @default(now()) // 数据获取时间
+  updated_at           DateTime  @updatedAt // Prisma自动管理的更新时间
 
   @@map("us_stocks_name") // 将模型映射到数据库表 us_stocks_name
 }
 
 model StockSymbol {
-  currency        String?
-  description     String?
-  displaySymbol   String
-  figi            String?
-  mic             String?
-  shareClassFIGI  String?
-  symbol          String    @id
-  type            String?
-  fetchedAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  index                Int?      // 序号 - 可选，可能为空或非数字
+  name                 String    // 名称
+  price                Decimal?  @db.Decimal(18, 4) // 最新价 - 使用Decimal提高精度
+  price_change         Decimal?  @db.Decimal(18, 4) // 涨跌额
+  price_change_percent Decimal?  @db.Decimal(10, 4) // 涨跌幅
+  open                 Decimal?  @db.Decimal(18, 4) // 开盘价
+  high                 Decimal?  @db.Decimal(18, 4) // 最高价
+  low                  Decimal?  @db.Decimal(18, 4) // 最低价
+  pre_close            Decimal?  @db.Decimal(18, 4) // 昨收价
+  market_value         BigInt?   // 总市值 - 使用BigInt处理大数值
+  pe_ratio             Decimal?  @db.Decimal(18, 4) // 市盈率
+  volume               BigInt?   // 成交量
+  turnover             BigInt?   // 成交额
+  amplitude            Decimal?  @db.Decimal(10, 4) // 振幅
+  turnover_rate        Decimal?  @db.Decimal(10, 4) // 换手率
+  fullsymbol           String    @id // 主键，股票代码全称
+  symbol               String   // 股票代码，由fullsymbol清洗后生成，如"107.TBT"→"TBT"，临时可空，便于迁移
+  fetched_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
 
   @@map("stock_symbols")
 }

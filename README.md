@@ -2,6 +2,13 @@
 
 基于 Python 和 TypeScript 的股票数据分析和 AI 应用平台。
 
+## 近期更新 / 新特性
+
+- 支持批量 upsert 美股名称与股票代码信息，数据同步更高效
+- 数据库结构升级，字段更丰富，主键更合理，兼容大数据量
+- 自动化数据库迁移流程，安全幂等，推荐开发/生产环境统一采用
+- TypeScript/Python 脚本联动，支持一键同步与批量处理
+
 ## 项目概述
 
 StockAI 是一个结合了 Python 数据分析能力和 TypeScript 全栈开发的现代化股票分析平台。项目利用 akshare 获取股票数据，通过 pandas 进行数据处理，并使用 Prisma 进行数据持久化。
@@ -21,6 +28,15 @@ StockAI 是一个结合了 Python 数据分析能力和 TypeScript 全栈开发�
 - Prisma ORM 6.7.0+
 - pnpm 10.8.1+: 包管理器
 - Node.js 18+
+
+### TypeScript 开发
+
+- 使用 TypeScript 5.8.3+ 严格模式
+- 遵循项目的 ESLint 规则
+- 使用 Prisma 6.7.0+ 进行数据库操作
+- 所有类型定义放在 types/ 目录下
+- 推荐扩展 types/ 目录，统一管理自定义类型，提升类型安全与可维护性
+- 建议结合最新 TypeScript 特性与严格模式，提升代码健壮性
 
 ## 项目结构
 
@@ -89,61 +105,25 @@ stockai/
    pnpm prisma migrate dev
    ```
 
+### 数据库结构升级与自动化迁移
+
+本次升级对数据库 schema 进行了优化：
+- `UsStocksName` 表支持中英文名称、主键为 symbol，自动记录更新时间
+- `StockSymbol` 表字段更丰富，主键为 fullsymbol，支持高精度行情与大市值数据
+- 所有表均支持批量 upsert，便于大规模数据同步
+
+推荐使用自动化迁移命令，确保数据库结构与 schema 保持一致：
+
+```bash
+pnpm prisma migrate dev      # 开发环境自动迁移
+pnpm prisma migrate deploy   # 生产环境自动迁移
+```
+
+详细自动化迁移方案见 prisma/Task-DB-Init.md
+
 ## 使用说明
 
 1. 启动 Python 服务：
    ```bash
    python main.py
    ```
-
-2. 更新股票数据：
-   ```bash
-   # 更新美股股票名称列表
-   pnpm run update:us-stock-names
-
-   # 更新股票代码信息
-   pnpm run update:stock-symbols
-   ```
-
-## 开发指南
-
-### Python 开发
-
-- 使用 Python 3.12+ 的新特性
-- 遵循 PEP 8 编码规范
-- 使用 uv 管理依赖
-- 推荐使用 PyPI 镜像源加速依赖安装
-
-### TypeScript 开发
-
-- 使用 TypeScript 5.8.3+ 严格模式
-- 遵循项目的 ESLint 规则
-- 使用 Prisma 6.7.0+ 进行数据库操作
-- 所有类型定义放在 types/ 目录下
-
-## 数据源
-
-- 股票基础数据：通过 akshare 1.16.83+ 获取
-- 金融市场数据：通过 finnhub-python 2.4.23+ API 获取
-- 数据存储：使用 Prisma 6.7.0+ 管理的数据库
-- 支持的数据类型：
-  - 股票基本信息
-  - 实时行情数据
-  - 历史交易数据
-  - 公司财务数据
-
-## 贡献指南
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-## 许可证
-
-本项目采用 ISC 许可证 - 详见 [LICENSE](LICENSE) 文件
-
-## 作者
-
-- Andy
