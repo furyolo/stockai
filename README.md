@@ -8,6 +8,7 @@
 - 数据库结构升级，字段更丰富，主键更合理，兼容大数据量
 - 自动化数据库迁移流程，安全幂等，推荐开发/生产环境统一采用
 - TypeScript/Python 脚本联动，支持一键同步与批量处理
+- 新增美股每周K线数据批量抓取与入库，支持进度实时反馈，自动跳过已抓取symbol
 
 ## 项目概述
 
@@ -111,6 +112,7 @@ stockai/
 - `UsStocksName` 表支持中英文名称、主键为 symbol，自动记录更新时间
 - `StockSymbol` 表字段更丰富，主键为 fullsymbol，支持高精度行情与大市值数据
 - 所有表均支持批量 upsert，便于大规模数据同步
+- 新增 `StockWeeklyData` 表，支持美股每周K线数据批量入库，主键为 (symbol, dates)，自动记录抓取与更新时间
 
 推荐使用自动化迁移命令，确保数据库结构与 schema 保持一致：
 
@@ -127,3 +129,10 @@ pnpm prisma migrate deploy   # 生产环境自动迁移
    ```bash
    python main.py
    ```
+
+2. 批量抓取并入库美股每周K线数据：
+   ```bash
+   pnpm update:weekly-us-stock-data
+   ```
+   > 默认抓取所有未入库symbol的历史周K线数据，自动跳过已抓取symbol，支持进度实时反馈。
+   > 可根据需要修改 src/updateWeeklyUsStockData.ts 以支持自定义日期范围或增量抓取。

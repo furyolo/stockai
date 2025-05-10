@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "update:us-stock-names": "ts-node src/updateUsStockNames.ts",
-    "update:stock-symbols": "ts-node src/updateStockSymbols.ts"
+    "update:stock-symbols": "ts-node src/updateStockSymbols.ts",
+    "update:weekly-us-stock-data": "ts-node src/updateWeeklyUsStockData.ts"
   },
   "keywords": [],
   "author": "",

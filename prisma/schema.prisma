@@ -46,3 +46,23 @@ model StockSymbol {
 
   @@map("stock_symbols")
 }
+
+model StockWeeklyData {
+  symbol                String    // 股票代码
+  dates                 String    // 周K线日期（yyyy-MM-dd）
+  open                  Decimal?  @db.Decimal(18, 4)
+  close                 Decimal?  @db.Decimal(18, 4)
+  high                  Decimal?  @db.Decimal(18, 4)
+  low                   Decimal?  @db.Decimal(18, 4)
+  volume                BigInt?
+  turnover              BigInt?
+  amplitude             Decimal?  @db.Decimal(10, 4)
+  price_change_percent  Decimal?  @db.Decimal(10, 4)
+  price_change          Decimal?  @db.Decimal(18, 4)
+  turnover_rate         Decimal?  @db.Decimal(10, 4)
+  fetched_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  @@id([symbol, dates])
+  @@map("stock_weekly_data")
+}
